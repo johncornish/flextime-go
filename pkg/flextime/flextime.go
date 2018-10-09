@@ -15,21 +15,30 @@ func (t Task) IsDue() bool {
 	return t.DueDate.Before(time.Now().Local())
 }
 
-func (t Task) Next() Task {
+func nextTime(t time.Time, repeat string) time.Time {
+	num, err := strconv.ParseInt(repeat[:len(repeat)-1], 10, 64)
+	_ = err
+
 	dayRepeat := regexp.MustCompile(`^\d+d$`)
+	weekRepeat := regexp.MustCompile(`^\d+w$`)
+	monthRepeat := regexp.MustCompile(`^\d+m$`)
 
 	switch {
-	case dayRepeat.MatchString(t.Repeat):
-		numStr := t.Repeat[:len(t.Repeat)-1]
-		num, err := strconv.ParseInt(numStr, 10, 64)
-		_ = err
-
-		return Task{
-			DueDate: t.DueDate.AddDate(0, 0, int(num)),
-			Repeat:  t.Repeat,
-		}
+	case dayRepeat.MatchString(repeat):
+		return t.AddDate(0, 0, int(num))
+	case weekRepeat.MatchString(repeat):
+		return t.AddDate(0, 0, 7*int(num))
+	case monthRepeat.MatchString(repeat):
+		return t.AddDate(0, int(num), 0)
 	default:
 		return t
+	}
+}
+
+func (t Task) Next() Task {
+	return Task{
+		DueDate: nextTime(t.DueDate, t.Repeat),
+		Repeat:  t.Repeat,
 	}
 }
 

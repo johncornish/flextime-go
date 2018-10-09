@@ -3,6 +3,8 @@ package flextime_test
 import (
 	"time"
 
+	. "github.com/onsi/ginkgo/extensions/table"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -23,18 +25,26 @@ var _ = Describe("Flextime", func() {
 			Expect(task2.IsDue()).To(Equal(true))
 		})
 
-		It("should support repetition by number of days", func() {
-			today := time.Now().Local().AddDate(0, 0, 0)
-			tomorrow := today.AddDate(0, 0, 1)
+		DescribeTable("repetition",
+			func(years, months, days int, repeat string) {
+				today := time.Now().Local()
+				nextDate := today.AddDate(years, months, days)
 
-			task := flextime.Task{
-				DueDate: today,
-				Repeat:  "1d",
-			}
+				task := flextime.Task{
+					DueDate: today,
+					Repeat:  repeat,
+				}
 
-			nextTask := task.Next()
-			Expect(nextTask.DueDate).To(Equal(tomorrow))
-		})
+				nextTask := task.Next()
+				Expect(nextTask.DueDate).To(Equal(nextDate))
+			},
+			Entry("days", 0, 0, 1, "1d"),
+			Entry("days", 0, 0, 21, "21d"),
+			Entry("weeks", 0, 0, 7, "1w"),
+			Entry("weeks", 0, 0, 14, "2w"),
+			Entry("months", 0, 1, 0, "1m"),
+			Entry("months", 0, 2, 0, "2m"),
+		)
 	})
 
 	Describe("TimeBlock", func() {
