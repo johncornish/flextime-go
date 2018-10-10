@@ -1,6 +1,7 @@
 package flextime
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 	"time"
@@ -15,31 +16,42 @@ func (t Task) IsDue() bool {
 	return t.DueDate.Before(time.Now().Local())
 }
 
-func nextTime(t time.Time, repeat string) time.Time {
-	num, err := strconv.ParseInt(repeat[:len(repeat)-1], 10, 64)
-	_ = err
+func (t Task) Next() (Task, error) {
+	var task Task
 
+	next, err := nextTime(t.DueDate, t.Repeat)
+	if err != nil {
+		return task, err
+	}
+
+	task = Task{
+		DueDate: next,
+		Repeat:  t.Repeat,
+	}
+
+	return task, nil
+}
+
+type TimeBlock struct{}
+
+func repeatNum(repeat string) int {
+	num64, _ := strconv.ParseInt(repeat[:len(repeat)-1], 10, 64)
+	return int(num64)
+}
+
+func nextTime(t time.Time, repeat string) (time.Time, error) {
 	dayRepeat := regexp.MustCompile(`^\d+d$`)
 	weekRepeat := regexp.MustCompile(`^\d+w$`)
 	monthRepeat := regexp.MustCompile(`^\d+m$`)
 
 	switch {
 	case dayRepeat.MatchString(repeat):
-		return t.AddDate(0, 0, int(num))
+		return t.AddDate(0, 0, repeatNum(repeat)), nil
 	case weekRepeat.MatchString(repeat):
-		return t.AddDate(0, 0, 7*int(num))
+		return t.AddDate(0, 0, 7*repeatNum(repeat)), nil
 	case monthRepeat.MatchString(repeat):
-		return t.AddDate(0, int(num), 0)
+		return t.AddDate(0, repeatNum(repeat), 0), nil
 	default:
-		return t
+		return t, errors.New("Unrecognized repeat string")
 	}
 }
-
-func (t Task) Next() Task {
-	return Task{
-		DueDate: nextTime(t.DueDate, t.Repeat),
-		Repeat:  t.Repeat,
-	}
-}
-
-type TimeBlock struct{}

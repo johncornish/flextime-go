@@ -12,6 +12,14 @@ import (
 )
 
 var _ = Describe("Flextime", func() {
+	var (
+		now time.Time
+	)
+
+	BeforeSuite(func() {
+		now = time.Now().Local()
+	})
+
 	Describe("Task", func() {
 		It("should know whether it's due or not", func() {
 			task1 := flextime.Task{
@@ -27,16 +35,16 @@ var _ = Describe("Flextime", func() {
 
 		DescribeTable("repetition",
 			func(years, months, days int, repeat string) {
-				today := time.Now().Local()
-				nextDate := today.AddDate(years, months, days)
+				nextDate := now.AddDate(years, months, days)
 
 				task := flextime.Task{
-					DueDate: today,
+					DueDate: now,
 					Repeat:  repeat,
 				}
 
-				nextTask := task.Next()
-				Expect(nextTask.DueDate).To(Equal(nextDate))
+				next, err := task.Next()
+				Expect(next.DueDate).To(Equal(nextDate))
+				Expect(err).ToNot(HaveOccurred())
 			},
 			Entry("days", 0, 0, 1, "1d"),
 			Entry("days", 0, 0, 21, "21d"),
@@ -44,6 +52,21 @@ var _ = Describe("Flextime", func() {
 			Entry("weeks", 0, 0, 14, "2w"),
 			Entry("months", 0, 1, 0, "1m"),
 			Entry("months", 0, 2, 0, "2m"),
+		)
+
+		DescribeTable("invalid repetitions",
+			func(repeat string) {
+				task := flextime.Task{
+					DueDate: now,
+					Repeat:  repeat,
+				}
+
+				_, err := task.Next()
+
+				Expect(err).To(HaveOccurred())
+			},
+			Entry("empty", ""),
+			Entry("repeated character", "1dd"),
 		)
 	})
 
