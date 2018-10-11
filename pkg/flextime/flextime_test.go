@@ -33,7 +33,7 @@ var _ = Describe("Flextime", func() {
 			Expect(task2.IsDue()).To(Equal(true))
 		})
 
-		DescribeTable("repetition",
+		DescribeTable("time repetition",
 			func(years, months, days int, repeat string) {
 				nextDate := now.AddDate(years, months, days)
 
@@ -68,6 +68,26 @@ var _ = Describe("Flextime", func() {
 			Entry("empty", ""),
 			Entry("repeated character", "1dd"),
 		)
+	})
+
+	Describe("TaskCategory", func() {
+		It("should allow user to add tasks", func() {
+			tc := flextime.TaskCategory{
+				// This vs. separate test to make sure it can be named?
+				Name:     "Messaging",
+				Contexts: []string{"computer", "phone"},
+			}
+
+			task := flextime.Task{
+				Name:    "email",
+				Repeat:  "1d",
+				DueDate: now.AddDate(0, 0, 1),
+			}
+
+			tc.AddTask(task)
+
+			Expect(tc.Tasks).To(ContainElement(task))
+		})
 	})
 
 	Describe("TimeBlock", func() {

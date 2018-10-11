@@ -8,6 +8,7 @@ import (
 )
 
 type Task struct {
+	Name    string
 	DueDate time.Time
 	Repeat  string
 }
@@ -33,6 +34,16 @@ func (t Task) Next() (Task, error) {
 }
 
 type TimeBlock struct{}
+
+type TaskCategory struct {
+	Name     string
+	Contexts []string
+	Tasks    []Task
+}
+
+func (tc *TaskCategory) AddTask(task Task) {
+	tc.Tasks = append(tc.Tasks, task)
+}
 
 func repeatNum(repeat string) int {
 	num64, _ := strconv.ParseInt(repeat[:len(repeat)-1], 10, 64)
