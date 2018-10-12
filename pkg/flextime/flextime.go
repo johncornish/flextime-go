@@ -3,14 +3,16 @@ package flextime
 import (
 	"errors"
 	"regexp"
+	"sort"
 	"strconv"
 	"time"
 )
 
 type Task struct {
-	Name    string
-	DueDate time.Time
-	Repeat  string
+	Name     string
+	DueDate  time.Time
+	Estimate time.Duration
+	Repeat   string
 }
 
 func (t Task) IsDue() bool {
@@ -33,7 +35,19 @@ func (t Task) Next() (Task, error) {
 	return task, nil
 }
 
-type TimeBlock struct{}
+type TimeBlock struct {
+	Name      string
+	Start     time.Time
+	End       time.Time
+	Scheduled []Task
+}
+
+func (tb *TimeBlock) Schedule(tCats ...TaskCategory) {
+	for _, tc := range tCats {
+		tb.Scheduled = append(tb.Scheduled, tc.Tasks...)
+	}
+	sort.Sort(byDue(tb.Scheduled))
+}
 
 type TaskCategory struct {
 	Name     string
@@ -65,4 +79,19 @@ func nextTime(t time.Time, repeat string) (time.Time, error) {
 	default:
 		return t, errors.New("Unrecognized repeat string")
 	}
+}
+
+type byDue []Task
+
+func (a byDue) Len() int      { return len(a) }
+func (a byDue) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byDue) Less(i, j int) bool {
+	if a[j].DueDate.IsZero() {
+		return true
+	}
+	if a[i].DueDate.IsZero() && !a[j].DueDate.IsZero() {
+		return false
+	}
+
+	return a[i].DueDate.Before(a[j].DueDate)
 }

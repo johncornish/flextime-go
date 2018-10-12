@@ -13,11 +13,13 @@ import (
 
 var _ = Describe("Flextime", func() {
 	var (
-		now time.Time
+		now      time.Time
+		location time.Location
 	)
 
 	BeforeSuite(func() {
 		now = time.Now().Local()
+		location = time.Location{}
 	})
 
 	Describe("Task", func() {
@@ -91,9 +93,80 @@ var _ = Describe("Flextime", func() {
 	})
 
 	Describe("TimeBlock", func() {
-		It("should be able to be instantiated", func() {
-			tb := flextime.TimeBlock{}
-			_ = tb
+		var (
+			tb    flextime.TimeBlock
+			tc    flextime.TaskCategory
+			tasks []flextime.Task
+		)
+
+		BeforeEach(func() {
+			tb = flextime.TimeBlock{
+				Name:  "home",
+				Start: now.Local(),
+				End:   now.Local().Add(time.Hour),
+			}
+
+			tasks = []flextime.Task{
+				{
+					Name:     "Clean room",
+					Estimate: 15 * time.Minute,
+					Repeat:   "1d",
+					DueDate:  time.Date(2018, 10, 11, 24, 0, 0, 0, &location),
+				},
+				{
+					Name:     "Clean kitchen",
+					Repeat:   "6w",
+					DueDate:  time.Date(2018, 10, 6, 24, 0, 0, 0, &location),
+					Estimate: time.Hour,
+				},
+				{
+					Name:     "Mail",
+					Estimate: 20 * time.Minute,
+				},
+				{
+					Name:     "Vacuum",
+					Repeat:   "1m",
+					DueDate:  time.Date(2018, 10, 15, 24, 0, 0, 0, &location),
+					Estimate: 15 * time.Minute,
+				},
+			}
+
+			tc = flextime.TaskCategory{
+				Name:     "Upkeep",
+				Contexts: []string{"home"},
+				Tasks:    tasks,
+			}
+
+			tb.Schedule(tc)
+		})
+
+		It("should order by due date, with non-due tasks at the end", func() {
+			orderedTasks := []flextime.Task{
+				{
+					Name:     "Clean kitchen",
+					Repeat:   "6w",
+					DueDate:  time.Date(2018, 10, 6, 24, 0, 0, 0, &location),
+					Estimate: time.Hour,
+				},
+				{
+					Name:     "Clean room",
+					Estimate: 15 * time.Minute,
+					Repeat:   "1d",
+					DueDate:  time.Date(2018, 10, 11, 24, 0, 0, 0, &location),
+				},
+				{
+					Name:     "Vacuum",
+					Repeat:   "1m",
+					DueDate:  time.Date(2018, 10, 15, 24, 0, 0, 0, &location),
+					Estimate: 15 * time.Minute,
+				},
+				{
+					Name:     "Mail",
+					Estimate: 20 * time.Minute,
+				},
+			}
+
+			Expect(tb.Scheduled).To(Equal(orderedTasks))
 		})
 	})
 })
