@@ -42,11 +42,28 @@ type TimeBlock struct {
 	Scheduled []Task
 }
 
+func (tb TimeBlock) AvailableTime() time.Duration {
+	return tb.End.Sub(tb.Start)
+}
+
 func (tb *TimeBlock) Schedule(tCats ...TaskCategory) {
+	var taskTime time.Duration
+	var tasks []Task
+
+	tb.Scheduled = []Task{}
+
 	for _, tc := range tCats {
-		tb.Scheduled = append(tb.Scheduled, tc.Tasks...)
+		tasks = append(tasks, tc.Tasks...)
 	}
-	sort.Sort(byDue(tb.Scheduled))
+	sort.Sort(byDue(tasks))
+
+	for _, task := range tasks {
+		taskTime += task.Estimate
+		if taskTime > tb.AvailableTime() {
+			break
+		}
+		tb.Scheduled = append(tb.Scheduled, task)
+	}
 }
 
 type TaskCategory struct {

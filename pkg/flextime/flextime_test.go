@@ -75,7 +75,6 @@ var _ = Describe("Flextime", func() {
 	Describe("TaskCategory", func() {
 		It("should allow user to add tasks", func() {
 			tc := flextime.TaskCategory{
-				// This vs. separate test to make sure it can be named?
 				Name:     "Messaging",
 				Contexts: []string{"computer", "phone"},
 			}
@@ -103,7 +102,7 @@ var _ = Describe("Flextime", func() {
 			tb = flextime.TimeBlock{
 				Name:  "home",
 				Start: now.Local(),
-				End:   now.Local().Add(time.Hour),
+				End:   now.Local().Add(time.Hour + 35*time.Minute),
 			}
 
 			tasks = []flextime.Task{
@@ -140,7 +139,7 @@ var _ = Describe("Flextime", func() {
 			tb.Schedule(tc)
 		})
 
-		It("should order by due date, with non-due tasks at the end", func() {
+		It("should order by due date, with non-due tasks at the end, and only as many as can fit in the time block", func() {
 			orderedTasks := []flextime.Task{
 				{
 					Name:     "Clean kitchen",
@@ -160,13 +159,29 @@ var _ = Describe("Flextime", func() {
 					DueDate:  time.Date(2018, 10, 15, 24, 0, 0, 0, &location),
 					Estimate: 15 * time.Minute,
 				},
-				{
-					Name:     "Mail",
-					Estimate: 20 * time.Minute,
-				},
 			}
 
 			Expect(tb.Scheduled).To(Equal(orderedTasks))
+		})
+
+		It("should overwrite previous schedule if schedule is called again", func() {
+			newTasks := []flextime.Task{
+				{
+					Name:     "Make bed",
+					Estimate: 5 * time.Minute,
+					Repeat:   "1d",
+					DueDate:  time.Date(2018, 10, 12, 24, 0, 0, 0, &location),
+				},
+			}
+
+			tc2 := flextime.TaskCategory{
+				Name:     "Room",
+				Contexts: []string{"home"},
+				Tasks:    newTasks,
+			}
+
+			tb.Schedule(tc2)
+			Expect(tb.Scheduled).To(Equal(newTasks))
 		})
 	})
 })
