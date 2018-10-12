@@ -12,15 +12,6 @@ import (
 )
 
 var _ = Describe("Flextime", func() {
-	var (
-		now      time.Time
-		location time.Location
-	)
-
-	BeforeSuite(func() {
-		now = time.Now().Local()
-		location = time.Location{}
-	})
 
 	Describe("Task", func() {
 		It("should know whether it's due or not", func() {
@@ -93,9 +84,7 @@ var _ = Describe("Flextime", func() {
 
 	Describe("TimeBlock", func() {
 		var (
-			tb    flextime.TimeBlock
-			tc    flextime.TaskCategory
-			tasks []flextime.Task
+			tb flextime.TimeBlock
 		)
 
 		BeforeEach(func() {
@@ -105,38 +94,7 @@ var _ = Describe("Flextime", func() {
 				End:   now.Local().Add(time.Hour + 35*time.Minute),
 			}
 
-			tasks = []flextime.Task{
-				{
-					Name:     "Clean room",
-					Estimate: 15 * time.Minute,
-					Repeat:   "1d",
-					DueDate:  time.Date(2018, 10, 11, 24, 0, 0, 0, &location),
-				},
-				{
-					Name:     "Clean kitchen",
-					Repeat:   "6w",
-					DueDate:  time.Date(2018, 10, 6, 24, 0, 0, 0, &location),
-					Estimate: time.Hour,
-				},
-				{
-					Name:     "Mail",
-					Estimate: 20 * time.Minute,
-				},
-				{
-					Name:     "Vacuum",
-					Repeat:   "1m",
-					DueDate:  time.Date(2018, 10, 15, 24, 0, 0, 0, &location),
-					Estimate: 15 * time.Minute,
-				},
-			}
-
-			tc = flextime.TaskCategory{
-				Name:     "Upkeep",
-				Contexts: []string{"home"},
-				Tasks:    tasks,
-			}
-
-			tb.Schedule(tc)
+			tb.Schedule(tcUpkeep)
 		})
 
 		It("should order by due date, with non-due tasks at the end, and only as many as can fit in the time block", func() {
@@ -165,23 +123,81 @@ var _ = Describe("Flextime", func() {
 		})
 
 		It("should overwrite previous schedule if schedule is called again", func() {
-			newTasks := []flextime.Task{
-				{
-					Name:     "Make bed",
-					Estimate: 5 * time.Minute,
-					Repeat:   "1d",
-					DueDate:  time.Date(2018, 10, 12, 24, 0, 0, 0, &location),
-				},
-			}
-
-			tc2 := flextime.TaskCategory{
-				Name:     "Room",
-				Contexts: []string{"home"},
-				Tasks:    newTasks,
-			}
-
-			tb.Schedule(tc2)
-			Expect(tb.Scheduled).To(Equal(newTasks))
+			tb.Schedule(tcRoom)
+			Expect(tb.Scheduled).To(Equal(roomTasks))
 		})
+
+		It("should support multiple TaskCategories", func() {
+			tb = flextime.TimeBlock{
+				Name:  "home",
+				Start: now.Local(),
+				End:   now.Local().Add(5 * time.Hour),
+			}
+
+			tb.Schedule(tcUpkeep, tcRoom, tcComputer)
+			Expect(tb.Scheduled).To(ConsistOf(append(homeTasks, roomTasks...)))
+		})
+		It("should only schedule tasks for its context", func() {})
 	})
 })
+
+var now = time.Now().Local()
+var location = time.Location{}
+
+var roomTasks = []flextime.Task{
+	{
+		Name:     "Make bed",
+		Estimate: 5 * time.Minute,
+		Repeat:   "1d",
+		DueDate:  time.Date(2018, 10, 12, 24, 0, 0, 0, &location),
+	},
+}
+
+var homeTasks = []flextime.Task{
+	{
+		Name:     "Clean room",
+		Estimate: 15 * time.Minute,
+		Repeat:   "1d",
+		DueDate:  time.Date(2018, 10, 11, 24, 0, 0, 0, &location),
+	},
+	{
+		Name:     "Clean kitchen",
+		Repeat:   "6w",
+		DueDate:  time.Date(2018, 10, 6, 24, 0, 0, 0, &location),
+		Estimate: time.Hour,
+	},
+	{
+		Name:     "Mail",
+		Estimate: 20 * time.Minute,
+	},
+	{
+		Name:     "Vacuum",
+		Repeat:   "1m",
+		DueDate:  time.Date(2018, 10, 15, 24, 0, 0, 0, &location),
+		Estimate: 15 * time.Minute,
+	},
+}
+
+var computerTasks = []flextime.Task{
+	{
+		Name:    "Email",
+		Repeat:  "1d",
+		DueDate: now.AddDate(0, 0, 1),
+	},
+}
+
+var tcUpkeep = flextime.TaskCategory{
+	Name:     "Upkeep",
+	Contexts: []string{"home"},
+	Tasks:    homeTasks,
+}
+var tcRoom = flextime.TaskCategory{
+	Name:     "Room",
+	Contexts: []string{"home"},
+	Tasks:    roomTasks,
+}
+var tcComputer = flextime.TaskCategory{
+	Name:     "Computer",
+	Contexts: []string{"computer"},
+	Tasks:    computerTasks,
+}

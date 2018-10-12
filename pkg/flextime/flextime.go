@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/stretchr/stew/slice"
 )
 
 type Task struct {
@@ -53,6 +55,9 @@ func (tb *TimeBlock) Schedule(tCats ...TaskCategory) {
 	tb.Scheduled = []Task{}
 
 	for _, tc := range tCats {
+		if !slice.Contains(tc.Contexts, tb.Name) {
+			continue
+		}
 		tasks = append(tasks, tc.Tasks...)
 	}
 	sort.Sort(byDue(tasks))
