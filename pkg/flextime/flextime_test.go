@@ -12,7 +12,6 @@ import (
 )
 
 var _ = Describe("Flextime", func() {
-
 	Describe("Task", func() {
 		It("should know whether it's due or not", func() {
 			task1 := flextime.Task{
@@ -27,8 +26,8 @@ var _ = Describe("Flextime", func() {
 		})
 
 		DescribeTable("time repetition",
-			func(years, months, days int, repeat string) {
-				nextDate := now.AddDate(years, months, days)
+			func(months, days int, repeat string) {
+				nextDate := now.AddDate(0, months, days)
 
 				task := flextime.Task{
 					DueDate: now,
@@ -39,12 +38,43 @@ var _ = Describe("Flextime", func() {
 				Expect(next.DueDate).To(Equal(nextDate))
 				Expect(err).ToNot(HaveOccurred())
 			},
-			Entry("days", 0, 0, 1, "1d"),
-			Entry("days", 0, 0, 21, "21d"),
-			Entry("weeks", 0, 0, 7, "1w"),
-			Entry("weeks", 0, 0, 14, "2w"),
-			Entry("months", 0, 1, 0, "1m"),
-			Entry("months", 0, 2, 0, "2m"),
+			Entry("days", 0, 1, "1d"),
+			Entry("days", 0, 21, "21d"),
+			Entry("weeks", 0, 7, "1w"),
+			Entry("weeks", 0, 14, "2w"),
+			Entry("months", 1, 0, "1m"),
+			Entry("months", 2, 0, "2m"),
+		)
+
+		DescribeTable("day repetition",
+			func(month, day int, repeat string) {
+				nextDate := time.Date(2018, time.Month(month), day, 0, 0, 0, 0, &location)
+
+				println(nextDate.String())
+
+				task := flextime.Task{
+					DueDate: time.Date(2018, 10, 10, 24, 0, 0, 0, &location),
+					Repeat:  repeat,
+				}
+
+				next, err := task.Next()
+				Expect(next.DueDate).To(Equal(nextDate))
+				Expect(err).ToNot(HaveOccurred())
+			},
+			Entry("day of month", 11, 1, "1"),
+			Entry("day of month", 11, 10, "10"),
+
+			// 			Entry("day of week", 10, 15, "mon"),
+			// 			Entry("day of week", 10, 16, "tues"),
+			// 			Entry("day of week", 10, 17, "wed"),
+			// 			Entry("day of week", 10, 18, "thurs"),
+			// 			Entry("day of week", 10, 19, "fri"),
+
+			// 			Entry("day of week", 10, 15, "monday"),
+			// 			Entry("day of week", 10, 16, "tuesday"),
+			// 			Entry("day of week", 10, 17, "wednesday"),
+			// 			Entry("day of week", 10, 18, "thursday"),
+			// 			Entry("day of week", 10, 19, "friday"),
 		)
 
 		DescribeTable("invalid repetitions",
