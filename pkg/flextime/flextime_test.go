@@ -50,8 +50,6 @@ var _ = Describe("Flextime", func() {
 			func(month, day int, repeat string) {
 				nextDate := time.Date(2018, time.Month(month), day, 0, 0, 0, 0, &location)
 
-				println(nextDate.String())
-
 				task := flextime.Task{
 					DueDate: time.Date(2018, 10, 10, 24, 0, 0, 0, &location),
 					Repeat:  repeat,

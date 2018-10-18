@@ -1,7 +1,27 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/johncornish/flextime-go/pkg/flextime"
+)
+
+type taskResponse struct {
+	Name string `json:"name"`
+}
 
 func main() {
-	fmt.Println("vim-go")
+	tasks := []flextime.Task{
+		{
+			Name: "task-1",
+		},
+	}
+
+	http.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
+		b, _ := json.Marshal(tasks)
+		w.Write(b)
+	})
+
+	http.ListenAndServe(":8080", nil)
 }

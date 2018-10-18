@@ -11,10 +11,10 @@ import (
 )
 
 type Task struct {
-	Name     string
-	DueDate  time.Time
-	Estimate time.Duration
-	Repeat   string
+	Name     string        `json:"name"`
+	DueDate  time.Time     `json:"due"`
+	Estimate time.Duration `json:"estimate"`
+	Repeat   string        `json:"repeat"`
 }
 
 func (t Task) IsDue() bool {
