@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package flextime.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message Task {
+  string name = 1;
+  string estimate = 2;
+  string repeat = 3;
+
+  google.protobuf.Timestamp due = 4;
+}
+
+message TaskCategory {
+  string name = 1;
+  repeated string contexts = 2;
+  repeated Task tasks = 3;
+}
