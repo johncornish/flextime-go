@@ -4,6 +4,10 @@ package flextime.v1;
 
 import "google/protobuf/timestamp.proto";
 
+service REST {
+  rpc AddTask(Task) returns (AddTaskResponse) {}
+}
+
 message Task {
   string name = 1;
   string estimate = 2;
@@ -17,3 +21,5 @@ message TaskCategory {
   repeated string contexts = 2;
   repeated Task tasks = 3;
 }
+
+message AddTaskResponse {}
